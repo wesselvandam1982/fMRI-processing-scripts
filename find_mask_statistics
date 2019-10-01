@@ -1,0 +1,86 @@
+#!/bin/tcsh -f
+
+# Takes a list of masks and conditions and finds
+# ROI (mask) stats for each mask for each condition.
+
+
+set prog_name = $0:t
+
+if ("$1" == "-h" || "$1" == "-help" || $#argv != 0 ) then
+echo ""
+echo "Usage: $prog_name"
+echo "Example: % ${prog_name} "
+echo "No arguments necessary."
+echo ""
+echo "${prog_name}: This program creates text files containing the ROI"
+echo "stats. ROIs are given by the mask files specified in the script file."
+echo "Change the script file to set appropriate variables. Run this"
+echo "script in the directory that the masks are in. The script produces"
+echo "one text file for each mask. The file contains one column for each"
+echo "condition you specified. Each row is the average value for the ROI"
+echo "in alphabetical order (order obtained by doing 'ls')."
+echo "This file can be imported into Excel."
+
+
+echo ""
+exit 1
+endif
+
+################### modify this ###################
+
+set study_name = "EmotionRegulation" #study name
+set study_dir = "/Users/batman/Documents/EmotionalRegulation_fMRI_study/Model_Wave_function_tshift_noRatingregr" #directory
+set conditions = "NegDec_PS NegLook_PS NegDec_DS NegLook_DS" #condition names
+set postfix = ".bl6" 
+set masks = "ROI_leftDLPFC ROI_rightDLPFC ROI_leftAmygdala ROI_rightAmygdala ROI_leftPutamen ROI_leftAmygdala" #masks
+ 
+ #####################################################
+
+
+foreach mask ( $masks )
+
+# convert full-brain mask to LH-only mask
+#3dCalc -a $mask+tlrc -expr "and(step(a),step(x))" -prefix ${mask}.Lmask
+
+set maskname = $mask
+echo $maskname > ${study_name}.$maskname.txt
+
+echo $maskname
+
+foreach cond ( $conditions )
+
+echo Calculating $cond ...
+
+# now find ROI stats in the mask for the given condition
+
+3dROIstats -mask_f2short -mask ${mask}+tlrc ${study_dir}/*.${cond}${postfix}+* > /tmp/$$.tmp
+
+# process the output so that the file is ready to import into excel
+# create a file for this condition, for this mask, for this study
+# that has a header with condition name on top of the data
+
+echo "${cond}" > ${study_name}.${cond}.${maskname}.txt
+
+#grep "HEAD" /tmp/$$.tmp | cut -f1,4,5 -d"." > /tmp/$$.tmp1
+#sed 's/\/Users\/rhdesai\/pub\/SenLit\/merge\///g' /tmp/$$.tmp1 | sed 's/.HEAD//g' | awk '{print $3}' >> ${study_name}.${cond}.${maskname}.txt
+grep "HEAD" /tmp/$$.tmp | cut -f3 > ${study_name}.${cond}.${maskname}.txt
+
+# combine all conditions for this mask into a single file. the header saved above
+# will be useful here.
+
+paste ${study_name}.$maskname.txt ${study_name}.${cond}.${maskname}.txt > /tmp/temp
+mv /tmp/temp ${study_name}.$maskname.txt
+
+
+rm /tmp/$$.tmp 
+rm ${study_name}.${cond}.${maskname}.txt
+paste EmotionRegulation.LeftAmygdala_duringstimulation_5mm.txt EmotionRegulation.RightAmygdala_duringstimulation_5mm.txt  > EmotionRegulation_analysis_D3/4.txt
+end  # conditions
+end  # masks
+
+echo
+echo "${prog_name}: Done."
+echo
+
+
+
