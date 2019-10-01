@@ -1,0 +1,22 @@
+#!/bin/tcsh -f
+
+# simple script to convert stimulus onset time file to 1D regressor with 0s and 1s
+# across each volume throughout a run. 
+
+set subjects = "s1"
+
+foreach s ( $subjects )
+
+cd ${s}
+
+timing_tool.py -timing biomotion.1D -timing_to_1D biomotion.1D -tr 0.8 -stim_dur 26 -min_frac 0.5 -run_len 240 
+timing_tool.py -timing scramble.1D  -timing_to_1D scramble.1D  -tr 0.8 -stim_dur 26 -min_frac 0.5 -run_len 240 
+timing_tool.py -timing static.1D    -timing_to_1D static.1D    -tr 0.8 -stim_dur 26 -min_frac 0.5 -run_len 240 
+
+cd ..
+
+end
+
+
+
+
