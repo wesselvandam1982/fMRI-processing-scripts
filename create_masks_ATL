@@ -1,0 +1,97 @@
+#!/bin/tcsh -f
+
+# Creating bilateral masks on the basis of TT_desai_dd_mpm maps
+# NOTE: within the TT_desai_dd_mpm map the numbering starts at 1 and counts up to 75 (all left hemisphere regions)
+# From number 76 to 150 it numbers the corresponding structures in the right hemisphere.
+# In the first foreach loop bilateral masks are created for these structures.
+# For number 1 in the TT_desai_dd_mpm map we have to include additional criteria given that there seems to be 
+# a mistake in the TT_desai_dd_mpm map in that also the edges of the brain have been given the value 1 (therefore we have
+# do some additional 3dcalc on this mask). 
+# We first create the mask for structure # 1 and then in the last line of the script
+# we say that we only want to include the voxels that have a positive value in a (aka the mask), an y-coordinate bigger than 53
+# and a z-coordinate smaller than 9. These criteria all together only masks out the frontal region that we are interested in and 
+# not the edges of the brain.
+
+# Number 151 to 190 code all the deep brain structures. Some regions are however not found in both the left and the right (e.g.,
+# the 3rd ventricle, 4th ventricle, brain-stem). Therefore we can not simple use the same foreach loop as used for the first 75 
+# masks. In the second foreach loop we explictly tell the program which left and right hemisphere structures we want to combine in
+# creating our masks. 
+
+#3dcalc -a TT_desai_dk_mpm+tlrc -expr "or(equals(a,6),equals(a,7),equals(a,9),equals(a,15),equals(a,30),equals(a,33))" -prefix mask_left_ATL
+#3dcalc -a TT_desai_dk_mpm+tlrc -expr "or(equals(a,41),equals(a,42),equals(a,44),equals(a,50),equals(a,65),equals(a,68))" -prefix mask_right_ATL
+
+#3dcalc -LPI -a mask_left_ATL+tlrc -expr "and(ispositive(a),ispositive(y+23))" -prefix mask_left_ATL_y-coordinate
+#3dcalc -LPI -a mask_right_ATL+tlrc -expr "and(ispositive(a),ispositive(y+23))" -prefix mask_right_ATL_y-coordinate
+
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,6))'  -prefix Left_entorhinal
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,7))'  -prefix Left_Fusiform_Gyrus
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,9))'  -prefix Left_ITG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,15))' -prefix Left_MTG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,30))' -prefix Left_STG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,33))' -prefix Left_TP
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,41))' -prefix Right_entorhinal
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,42))' -prefix Right_Fusiform_Gyrus
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,44))' -prefix Right_ITG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,50))' -prefix Right_MTG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,65))' -prefix Right_STG
+3dcalc -a TT_desai_dk_mpm+tlrc -expr 'or(equals(a,68))' -prefix Right_TP
+
+3dcalc -LPI -a Left_entorhinal+tlrc      -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_entorhinal
+3dcalc -LPI -a Left_Fusiform_Gyrus+tlrc  -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_Fusiform_Gyrus
+3dcalc -LPI -a Left_ITG+tlrc             -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_ITG
+3dcalc -LPI -a Left_MTG+tlrc             -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_MTG
+3dcalc -LPI -a Left_STG+tlrc             -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_STG
+3dcalc -LPI -a Left_TP+tlrc              -expr "and(ispositive(a),ispositive(y+23))"  -prefix Left_TP
+3dcalc -LPI -a Right_entorhinal+tlrc     -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_entorhinal
+3dcalc -LPI -a Right_Fusiform_Gyrus+tlrc -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_Fusiform_Gyrus
+3dcalc -LPI -a Right_ITG+tlrc            -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_ITG
+3dcalc -LPI -a Right_MTG+tlrc            -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_MTG
+3dcalc -LPI -a Right_STG+tlrc            -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_STG
+3dcalc -LPI -a Right_TP+tlrc             -expr "and(ispositive(a),ispositive(y+23))"  -prefix Right_TP
+
+#1 left_entorhinal
+#2 left_FG
+#3 left_ITG
+#4 left_MTG
+#5 left_STG
+#6 left_TP
+#7 right_entorhinal
+#8 right_FG
+#9 right_ITG
+#10 right_MTG
+#11 right_STG
+#12 right_TP
+
+3dcalc -a Left_entorhinal+tlrc             \
+       -b Left_Fusiform_Gyrus+tlrc         \
+       -c Left_ITG+tlrc                    \
+       -d Left_MTG+tlrc                    \
+       -e Left_STG+tlrc                    \
+       -f Left_TP+tlrc                     \
+       -g Right_entorhinal+tlrc            \
+       -h Right_Fusiform_Gyrus+tlrc        \
+       -i Right_ITG+tlrc                   \
+       -j Right_MTG+tlrc                   \
+       -k Right_STG+tlrc                   \
+       -l Right_TP+tlrc                    \
+       -expr '(a)+(2*b)+(3*c)+(4*d)+(5*e)+(6*f)+(7*g)+(8*h)+(9*i)+(10*j)+(11*k)+(12*l)'  \
+       -prefix Anterior_temporal_lobe_MASK
+       
+3dcalc -a Left_entorhinal+tlrc             \
+       -b Left_Fusiform_Gyrus+tlrc         \
+       -c Left_ITG+tlrc                    \
+       -d Left_MTG+tlrc                    \
+       -e Left_STG+tlrc                    \
+       -f Left_TP+tlrc                     \
+       -expr '(a)+(2*b)+(3*c)+(4*d)+(5*e)+(6*f)'  \
+       -prefix Left_Anterior_temporal_lobe_MASK
+
+3dcalc -g Right_entorhinal+tlrc            \
+       -h Right_Fusiform_Gyrus+tlrc        \
+       -i Right_ITG+tlrc                   \
+       -j Right_MTG+tlrc                   \
+       -k Right_STG+tlrc                   \
+       -l Right_TP+tlrc                    \
+       -expr '(7*g)+(8*h)+(9*i)+(10*j)+(11*k)+(12*l)'  \
+       -prefix right_Anterior_temporal_lobe_MASK       
+                       
