@@ -1,0 +1,112 @@
+#!/bin/tcsh -f
+
+# Create stim_times files from e-prime output file that 
+# has been converted and saved as tab-delimited text file using AWK.
+# Example e-prime output file 'S12sc1-out' (outputfile for run1 of subject 12).
+
+set subjects = "1 2 3 4 5" #subjects
+set runs = "1 2 3" #fMRI runs
+set study = "CREATIVITY"
+set run = "sc"
+set conditions = "NULL ExpTrial Baseline"
+
+# The getline command can be used without arguments to read input from the current input file. 
+# All it does in this case is read the next input record and split it up into fields.
+
+foreach s ( $subjects )
+	cd ${study}.${s}/
+
+foreach r ( $runs )     
+    cd run${r}/
+      	
+    set filepre = "S"
+    set run = "sc"
+    set filepost = "-out.txt"    
+	set inputfile = ${filepre}${s}${run}${r}${filepost}
+	awk -v subj=$s 'BEGIN {FS = "\t"; getline;} {\
+			if (substr($39, 1, 10) == "TrialProcB") {\
+			   outfile = ("temp." subj ".onset.Baseline.1D") \
+			   durbas_file = ("tmp." subj ".DUR_Base.1D") \
+			   magbas_file = ("tmp." subj ".MAG_Base.1D") \
+			   null_onset = (($23-$18)/1000)+6 \
+			   printf("%.0f ", 3) >> durbas_file \
+			   printf("%.0f ", 1) >> magbas_file \
+			   printf("%3.2f ", (($23-$18)/1000)) >> outfile} \
+			else if ((substr($39, 1, 10) == "TrialProc1") && (substr($45, 1, 1) == "i")) {\
+			   outfile = ("temp." subj ".onset.WrongResp.1D") \
+			   durwrong_file = ("tmp." subj ".DUR_INC.1D") \
+			   magwrong_file = ("tmp." subj ".MAG_INC.1D") \
+			   null_onset = (($33-$18)/1000)+12 \
+			   printf("%.0f ", 9) >> durwrong_file \
+			   printf("%.0f ", 1) >> magwrong_file \
+			   printf("%3.2f ", (($33-$18)/1000)) >> outfile } \
+			else if ((substr($39, 1, 10) == "TrialProc1") && (substr($45, 1, 1) == "c")) {\
+			   outfile = ("temp." subj ".onset.ExpTrial.1D") \
+			   durtrial_file = ("tmp." subj ".DUR_trial.1D") \
+			   magtrial_file = ("tmp." subj ".MAG_trial.1D") \
+			   null_onset = (($33-$18)/1000)+12 \
+			   printf("%.0f ", 9) >> durtrial_file \
+			   printf("%.0f ", 1) >> magtrial_file \
+			   printf("%3.2f ", (($33-$18)/1000)) >> outfile } \
+			else if (substr($39, 1, 10) == "BlockProcN") {\
+			   outfile = ("temp." subj ".onset.NULL.1D") \
+			   durnull_file = ("tmp." subj ".DUR_null.1D") \
+			   magnull_file = ("tmp." subj ".MAG_null.1D") \
+			   printf("%3.2f ", null_onset) >> outfile \
+			   printf("%3.2f ", 2.5) >> durnull_file \
+			   printf("%.0f ", 1) >> magnull_file \
+               null_onset = null_onset + 3} \
+		}' $inputfile 
+		
+# The input file is a tab-delimited textfile. FS = "\t" will change the field separator from the default
+# whitespace to a TAB. Each line is separated in different fields by using the TAB character. 
+
+	# each of the times files generated above (temp.*) has all times in a single line
+	# separate out each run into separate line 'final' filename <subj>.<condition>.1D
+    # This temporary file contains a value followed by a whitespace. Above we now go through this one-line file
+    # look at each field. The Field Separator is now the whitespace. If a FIELD value is smaller than it's previous
+    # field value, this means that it will be a subsequent scanner run. Therefore we will print a newline character, so
+    # all the onset times belonging to a run are on one line
+	
+	foreach file ( temp.$s.* )
+		set newfile = `echo $file | cut -f2-5 -d"."`  # new output filename without the 'temp'
+		awk 'BEGIN {prevtime=1000} {\
+		for (i=1; i <= NF; i++) { \
+			if ($i > prevtime) printf("\n") \
+			prevtime = $i \
+			printf("%3.2f", $i) }} \
+		END {printf("\n")}' $file > $newfile
+	end
+	
+	foreach file ( tmp.$s.* )
+		set newfile = `echo $file | cut -f2-4 -d"."`  # new output filename without the 'temp'
+		awk 'BEGIN {prevtime=2} {\
+		for (i=1; i <= NF; i++) { \
+			if ($i == prevtime) printf("\n") \
+			prevtime = $i \
+			printf("%3.1f", $i) }} \
+		END {printf("\n")}' $file > $newfile
+	end	
+	
+	
+	rm -f temp.$s.*
+	rm -f tmp.$s.*
+
+# Here we combine the onset times with the stimulus durations and the magnitudes
+
+    set runinfo = ${run}${r}
+    set subj = "s"
+    paste -d'\t' ${s}.onset.Baseline.1D ${s}.DUR_BASE.1D ${s}.MAG_Base.1D > ${runinfo}${subj}${s}.BASELINE.1D
+    paste -d'\t' ${s}.onset.ExpTrial.1D ${s}.DUR_trial.1D ${s}.MAG_trial.1D > ${runinfo}${subj}${s}.ExpTrial.1D
+    paste -d'\t' ${s}.onset.NULL.1D ${s}.DUR_null.1D ${s}.MAG_null.1D > ${runinfo}${subj}${s}.NULL.1D
+    paste -d'\t' ${s}.onset.WrongResp.1D ${s}.DUR_INC.1D ${s}.MAG_INC.1D > ${runinfo}${subj}${s}.WrongResp.1D
+
+    rm -f $s.*			
+
+cd ..
+
+end # Run End
+	
+cd ..
+
+end  # Subject End
