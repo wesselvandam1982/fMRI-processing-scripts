@@ -1,0 +1,41 @@
+#!/bin/tcsh -f
+
+# Makes a mask containing a spherical volume
+
+set prog_name = $0:t
+
+if ("$1" == "-h" || "$1" == "-help" || $#argv != 4 ) then
+echo ""
+echo "Usage: $prog_name <x> <y> <z> <radius>"
+echo "Example: % ${prog_name} -52 -34 0 10"
+echo ""
+echo "${prog_name}: This program creates a mask containing"
+echo "a sphere. The location of the sphere center is specified"
+echo "on the command line in the form of LPI x, y, z coordinates."
+echo "The fourth argument is the radius (r)of the sphere."
+echo "A mask of a single voxel can be made by choosing radius=1."
+echo "The output is saved in spheremask-r.x.y.z+tlrc."
+echo ""
+exit 1
+endif
+
+set p = $1        # center of the sphere
+set q = $2
+set r = $3
+set radius = $4   # radius of the sphere
+
+#set masktemplate = "~/mask/1807.anat.avgR3.mask+tlrc"
+set masktemplate = "TT_N27_3x3x3+tlrc"
+set outmaskname = spheremask-$radius.$p.$q.$r
+
+
+3dcalc -LPI -a ${masktemplate} \
+-expr "step(${radius}*${radius}-(($p-x)*($p-x)+($q-y)*($q-y)+($r-z)*($r-z)))" \
+-prefix ${outmaskname}
+
+
+echo
+echo "${prog_name}: Done."
+echo
+
+
