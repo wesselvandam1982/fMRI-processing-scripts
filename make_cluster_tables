@@ -1,0 +1,79 @@
+#!/bin/tcsh -f
+
+# Runs 3dClust on a given list of files 
+# and reports the results in an organized way
+
+set prog_name = $0:t
+
+if ("$1" == "-h" || "$1" == "-help" || $#argv != 0 ) then
+echo ""
+echo "Usage: $prog_name [no arguments are needed]"
+echo "Example: % ${prog_name}"
+echo ""
+echo "${prog_name}: This program runs the AFNI 3dClust program on a given list"
+echo "of files and reports the results in an organized way. The results can be"
+echo "imported into Excel or Word easily. It reports the volume,"
+echo "mean, max, and location of the peak (x, y, z) for each cluster."
+echo "This program is normally run on clustered and theresholded data."
+echo "Specify the list of files in the script (in the 'Modify this part' section)."
+echo "The output is sent to stdout (screen)."
+echo "Run this program in the directory where the files are."
+
+echo ""
+exit 1
+endif
+
+######## Modify this part ##################
+
+set prefix = "ttest.basis.wave_REML."  # part common to all your files
+set postfix = ".bl61.c801.p05.z"   # part common to all your files
+set conditions = "MVP_MVS IVP_IVS MVP_IVP Pictures_Scrambled verbxpic MVS_IVS MW_NW IW_NW" #conditions
+set radius = 3.1 # connection radius to decide which voxels are in the cluster
+
+############################################
+
+# format output of 3dclust to put into a text file
+# reports the volume, mean, and max value of each cluster,
+# as well as the coordinates of the peak
+
+set file1 = ../../../$$.temp1.1D
+set file2 = ../../../$$.temp2.1D
+set file3 = ../../../$$.temp3.1D
+set file4 = ../../../$$.temp4.1D
+
+foreach cond ( $conditions )
+
+echo "$cond ---------------------------------"
+
+# 1. Run 3dclust to generate list of coordinates (print only the cluster size, mean, max, and peak xyz)
+
+echo "Volume Mean Max x y z"
+echo > $file1
+3dclust -noabs -quiet ${radius} 0 ${prefix}${cond}${postfix}+tlrc | awk '{printf ("%d %3.2f %4.3f %d %d %d\n", $1, $11, $13, $14, $15, $16)}' | grep -v "0 0.00 0.000 0 0 0" >> $file1
+
+# 2. Run whereami on atlas to generate labels for those coords
+
+whereami -lpi -coord_file ${file1}'[3-5]' -atlas DD_Desai_MPM -tab -max_search_radius 2 | grep "DD_Desai_MPM" > $file2
+
+# 3. print labels in such a way so that they 'line up' with the coords above
+# Put multiple labels for the same coord in the same line.
+
+awk '{if ($2 == 0.0) printf("\n%d %s ", $2, $3); \
+      else printf("%d %s ", $2, $3); }' $file2 > $file3
+
+# 4. Paste the coord list and label list together
+
+paste $file1 $file3 > $file4
+
+# 5. Separate the +ve and -ve parts of the table so that A > B and A < B can be separated.
+
+awk '{if ($3 >= 0) print; }' $file4
+echo
+awk '{if ($3 < 0) print; }' $file4
+
+rm -f $file1 $file2 $file3
+
+echo
+
+end
+
