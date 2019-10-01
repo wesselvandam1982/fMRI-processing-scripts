@@ -1,0 +1,41 @@
+#!/bin/tcsh -f
+
+# Creating bilateral masks on the basis of TT_desai_dd_mpm maps
+# NOTE: within the TT_desai_dd_mpm map the numbering starts at 1 and counts up to 75 (all left hemisphere regions)
+# From number 76 to 150 it numbers the corresponding structures in the right hemisphere.
+
+# In the first foreach loop bilateral masks are created for these structures.
+# For number 1 in the TT_desai_dd_mpm map we have to include additional criteria given that there seems to be 
+# a mistake in the TT_desai_dd_mpm map in that also the edges of the brain have been given the value 1 (therefore we have
+# do some additional 3dcalc on this mask). 
+# We first create the mask for structure # 1 and then in the last line of the script
+# we say that we only want to include the voxels that have a positive value in a (aka the mask), an y-coordinate bigger than 53
+# and a z-coordinate smaller than 9. These criteria all together only masks out the frontal region that we are interested in and 
+# not the edges of the brain.
+
+# Number 151 to 190 code all the deep brain structures. Some regions are however not found in both the left and the right (e.g.,
+# the 3rd ventricle, 4th ventricle, brain-stem). Therefore we can not simple use the same foreach loop as used for the first 75 
+# masks. In the second foreach loop we explictly tell the program which left and right hemisphere structures we want to combine in
+# creating our masks. 
+
+foreach i (`count -dig 1 1 75 1`)
+	@ j = $i + 75
+	echo $i
+	echo $j
+           3dcalc -a TT_desai_dd_mpm+tlrc -expr "or(equals(a, $i),equals(a,$j))" -prefix mask_bilat_$i		
+	end
+
+
+set structures = " 151@169 152@170 153@171 154@172 155@173 156@174 157@175 158@176 159@177 163@178 164@179 165@180 166@181 167@182 168@183"
+    
+	foreach item ( ${structures} )
+	
+	  set i = `echo $item | cut -f1 -d"@"` #left hemisphere structure
+	  set j = `echo $item | cut -f2 -d"@"` #right hemisphere structure
+	@ k = $i - 75  
+	echo $i
+	echo $j
+               3dcalc -a TT_desai_dd_mpm+tlrc -expr "or(equals(a, $i),equals(a,$j))" -prefix mask_bilat_$k			
+	end
+
+               3dcalc -LPI -a mask_bilat_1+tlrc -expr "and(ispositive(a),ispositive(y-53),isnegative(z-9))" -prefix mask_bilat_1a		
