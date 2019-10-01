@@ -1,6 +1,9 @@
 #!/bin/tcsh -f
+# ----------------------------------- 
+#     Wessel Olaf van Dam 10/01/2019
+#------------------------------------
 
-# Create stim_times files from e-prime output file that 
+# Create stimulus onset times files from e-prime output file that 
 # has been converted and saved as tab-delimited text file using AWK.
 # Example e-prime output file 'S12sc1-out' (outputfile for run1 of subject 12).
 
