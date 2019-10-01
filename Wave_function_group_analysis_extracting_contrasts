@@ -1,8 +1,8 @@
 #!/bin/tcsh -f
 
 # Usage: Wave_function_group_analysis_extracting_contrasts ex
-#Wave_function_group_analysis_extracting_contrasts group
-#Wave_function_group_analysis_extracting_contrasts ex group
+# Wave_function_group_analysis_extracting_contrasts group
+# Wave_function_group_analysis_extracting_contrasts ex group
 
 #########################################
 
