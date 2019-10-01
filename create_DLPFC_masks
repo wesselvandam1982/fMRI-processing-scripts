@@ -1,0 +1,45 @@
+#!/bin/tcsh -f
+
+# Takes a list of subject-specific x-y-z coordinates and creates a ROI 
+# mask from it with radius of for example 5mm.
+
+
+echo "This program creates creates a ROI mask from x-y-z coordinates with radius of for example 5mm"
+echo "Change the script file to set appropriate variables. Run this"
+echo "script in the directory that the masks are in. The script produces"
+echo "one file for each mask." 
+
+set subjects = "Subject1@44@19@41 Subject2@46@31@31 Subject3@34@29@34 Subject4@44@16@41 Subject5@49@39@19 Subject6@44@39@19 Subject7@49@36@21 Subject8@41@34@36\
+Subject9@46@16@36 Subject10@46@19@41 Subject11@24@29@49 Subject12@44@19@39 Subject13@41@36@31 Subject14@41@24@41 Subject15@34@11@49 Subject16@41@16@44\
+Subject17@49@24@31 Subject18@51@31@21 Subject19@36@26@44 Subject20@24@21@51 Subject21@31@19@46 Subject22@36@19@44 Subject23@41@31@34 Subject24@41@26@41\
+Subject25@39@11@51 Subject26@34@16@51 Subject27@41@29@39 Subject28@21@39@46 Subject29@39@31@29 Subject30@41@31@31 Subject31@26@19@54 Subject32@44@16@44\
+Subject33@31@31@46 Subject34@44@34@21 Subject35@26@16@54 Subject36@36@29@31 Subject37@36@14@51 Subject38@36@21@49 Subject39@44@29@31 Subject40@21@34@49"
+
+
+set radius = "5"    # radius of the sphere
+
+foreach item ( ${subjects} )
+
+set subj = `echo $item | cut -f1 -d"@"`
+set p = `echo $item | cut -f2 -d"@"` # x-coordinate
+set q = `echo $item | cut -f3 -d"@"` # y-coordinate
+set r = `echo $item | cut -f4 -d"@"` # z-coordinate
+
+echo '============= Creating mask of' 
+echo $subj      
+
+echo $p
+echo $q
+echo $r
+echo $radius
+echo '======================================='
+
+set masktemplate = "resampled_20_new+tlrc"
+set outmaskname = RDLPFC_${subj}
+
+3dcalc -LPI -a ${masktemplate} \
+-expr "step(${radius}*${radius}-(($p-x)*($p-x)+($q-y)*($q-y)+($r-z)*($r-z)))" \
+-prefix ${outmaskname}
+
+end
+
