@@ -1,0 +1,307 @@
+#!/bin/tcsh -f
+
+# Usage: Wave_function_group_analysis_extracting_contrasts ex
+#Wave_function_group_analysis_extracting_contrasts group
+#Wave_function_group_analysis_extracting_contrasts ex group
+
+#########################################
+
+set fwhm = 6
+set study = "pn"
+
+set conditions = " BP@1 Instr@4 NegDec_PS@7 NegDec_DS@10 NegLook_PS@13 NegLook_DS@16 NeuLook_PS@19" #Condition Name and sub-brick number in which beta-coefficient is stored
+set subjects = "1 2 3 4 5 6 7" #subjects
+set s = "tshift_outliers_removed_5mm_smoothed" #prefix to folder containing stats file
+set mergedir = "/Users/batman/Documents/Emotionregulation_LDLPFC_STIM/Model_Wave_function_tshift_noRatingregr" #output directory
+set homedir = "/Users/batman/Documents/Emotionregulation_LDLPFC_STIM" #home directory 
+
+
+#########################################
+
+if ( $1 == "ex") then
+
+  echo "Part 1 ================================="
+
+
+  foreach subject ( $subjects )
+
+	cd ${homedir}/${subject}/${s}${subject}.results
+
+    set bucketname = "stats.tshift_outliers_removed_5mm_smoothed_correct_tshift${subject}_REML" #Name of stats input-file
+
+	foreach item ( ${conditions} )
+ 
+	  set cond = `echo $item | cut -f1 -d"@"`
+	  set b1loc = `echo $item | cut -f2 -d"@"` # beta1 = canonical beta
+
+	  if (-e b1+tlrc.HEAD) rm -f b1+tlrc.*
+	  if (-e b2+tlrc.HEAD) rm -f b2+tlrc.*
+
+	  3dbuc2fim -prefix b1 "${bucketname}+tlrc[${b1loc}]"
+
+	  if (-e ${cond}+tlrc.HEAD) rm -f ${cond}+tlrc.*
+ 	  if (-e ${cond}1+tlrc.HEAD) rm -f ${cond}1+tlrc.*
+
+  	 # only b1, no calhoun correction
+	 3dcopy b1+tlrc ${cond}+tlrc
+	 3drename ${cond}+tlrc ${cond}.bl${fwhm}
+
+      mv ${cond}.bl${fwhm}+tlrc.HEAD ${mergedir}/${subject}.${cond}.bl${fwhm}+tlrc.HEAD
+	  mv ${cond}.bl${fwhm}+tlrc.BRIK ${mergedir}/${subject}.${cond}.bl${fwhm}+tlrc.BRIK #check whether your BRIK files are being zipped or not!
+
+      rm -f ${cond}*+*.*  # delete +orig +tlrc files to save space
+	  rm -f b?+tlrc* b??+tlrc*
+
+	end
+
+	cd ../../../..
+
+  end  # subject
+
+endif
+
+
+if ( $1 == "group" || $2 == "group" ) then
+
+  echo "Part 2 ================================="
+
+  cd ${mergedir}
+
+  # creating a list with all subjects' blurred and tlrc-ed bricks for each condition
+
+  set group = "basis.WAVE_REML"
+
+	set cond = "BP"
+	set BPlist = ""
+        foreach subj ( $subjects )
+          set BPlist = "$BPlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "InstDec_DS"
+	set InstDec_DSlist = ""
+        foreach subj ( $subjects )
+          set InstDec_DSlist = "$InstDec_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "InstDec_PS"
+	set InstDec_PSlist = ""
+        foreach subj ( $subjects )
+          set InstDec_PSlist = "$InstDec_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "InstLook_DS"
+	set InstLook_DSlist = ""
+        foreach subj ( $subjects )
+          set InstLook_DSlist = "$InstLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "InstLook_PS"
+	set InstLook_PSlist = ""
+        foreach subj ( $subjects )
+          set InstLook_PSlist = "$InstLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+        
+	set cond = "NegDec_DS"
+	set NegDec_DSlist = ""
+        foreach subj ( $subjects )
+          set NegDec_DSlist = "$NegDec_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "NegDec_PS"
+	set NegDec_PSlist = ""
+        foreach subj ( $subjects )
+          set NegDec_PSlist = "$NegDec_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end 
+        
+	set cond = "NegLook_DS"
+	set NegLook_DSlist = ""
+        foreach subj ( $subjects )
+          set NegLook_DSlist = "$NegLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "NegLook_PS"
+	set NegLook_PSlist = ""
+        foreach subj ( $subjects )
+          set NegLook_PSlist = "$NegLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end         
+        
+	set cond = "NULL"
+	set NULLlist = ""
+        foreach subj ( $subjects )
+          set NULLlist = "$NULLlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end           
+        
+ 	set cond = "PosDec_DS"
+	set PosDec_DSlist = ""
+        foreach subj ( $subjects )
+          set PosDec_DSlist = "$PosDec_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "NegDec_PS"
+	set NegDec_PSlist = ""
+        foreach subj ( $subjects )
+          set NegDec_PSlist = "$NegDec_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end 
+        
+	set cond = "PosLook_DS"
+	set PosLook_DSlist = ""
+        foreach subj ( $subjects )
+          set PosLook_DSlist = "$PosLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+	set cond = "PosLook_PS"
+	set PosLook_PSlist = ""
+        foreach subj ( $subjects )
+          set PosLook_PSlist = "$PosLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end             
+ 
+ ########### Building the list for the regular contrasts ######
+ 
+ 	set cond = "InstDec_PS_InstLook_PS"
+	set InstDec_PS_InstLook_PSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.InstDec_PS.bl${fwhm}+tlrc -b ${subj}.InstLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set InstDec_PS_InstLook_PSlist = "$InstDec_PS_InstLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+ 	set cond = "InstDec_DS_InstLook_DS"
+	set InstDec_DS_InstLook_DSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.InstDec_DS.bl${fwhm}+tlrc -b ${subj}.InstLook_DS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set InstDec_DS_InstLook_DSlist = "$InstDec_DS_InstLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+        
+ 	set cond = "NegDec_PS_NegLook_PS"
+	set NegDec_PS_NegLook_PSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.NegDec_PS.bl${fwhm}+tlrc -b ${subj}.NegLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set NegDec_PS_NegLook_PSlist = "$NegDec_PS_NegLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+ 	set cond = "NegDec_PS_NeuLook_PS"
+	set NegDec_PS_NeuLook_PSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.NegDec_PS.bl${fwhm}+tlrc -b ${subj}.NeuLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set NegDec_PS_NeuLook_PSlist = "$NegDec_PS_NeuLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end        
+        
+  	set cond = "PosDec_PS_NeuLook_PS"
+	set PosDec_PS_NeuLook_PSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.PosDec_PS.bl${fwhm}+tlrc -b ${subj}.NeuLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set PosDec_PS_NeuLook_PSlist = "$PosDec_PS_NeuLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end        
+
+ 	set cond = "NegDec_DS_NegLook_DS"
+	set NegDec_DS_NegLook_DSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.NegDec_DS.bl${fwhm}+tlrc -b ${subj}.NegLook_DS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set NegDec_DS_NegLook_DSlist = "$NegDec_DS_NegLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+        
+ 	set cond = "PosDec_PS_PosLook_PS"
+	set PosDec_PS_PosLook_PSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.PosDec_PS.bl${fwhm}+tlrc -b ${subj}.PosLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set PosDec_PS_PosLook_PSlist = "$PosDec_PS_PosLook_PSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+ 	set cond = "PosDec_DS_PosLook_DS"
+	set PosDec_DS_PosLook_DSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.PosDec_DS.bl${fwhm}+tlrc -b ${subj}.PosLook_DS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set PosDec_DS_PosLook_DSlist = "$PosDec_DS_PosLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+        
+ 	set cond = "NeuLook_PS_NeuLook_DS"
+	set NeuLook_PS_NeuLook_DSlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.NeuLook_PS.bl${fwhm}+tlrc -b ${subj}.NeuLook_DS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set NeuLook_PS_NeuLook_DSlist = "$NeuLook_PS_NeuLook_DSlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end                
+
+ 	set cond = "BP_NULL"
+	set BP_NULLlist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.BP.bl${fwhm}+tlrc -b ${subj}.NULL.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set BP_NULLlist = "$BP_NULLlist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end        
+
+### building the list for the interaction contrasts ####                              
+
+ 	set cond = "InstrPreDurxDecLook"
+	set InstrPreDurxDecLooklist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.InstDec_DS_InstLook_DS.bl${fwhm}+tlrc -b ${subj}.InstDec_PS_InstLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set InstrPreDurxDecLooklist = "$InstrPreDurxDecLooklist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+ 	set cond = "PreDurxNeg_DecLook"
+	set PreDurxNeg_DecLooklist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.NegDec_DS_NegLook_DS.bl${fwhm}+tlrc -b ${subj}.NegDec_PS_NegLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set PreDurxNeg_DecLooklist = "$PreDurxNeg_DecLooklist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+ 	set cond = "PreDurxPos_DecLook"
+	set PreDurxPos_DecLooklist = ""
+        foreach i ( $subjects )
+	  set subj = `echo $i | cut -f1 -d"@"`
+	  3dcalc -a ${subj}.PosDec_DS_PosLook_DS.bl${fwhm}+tlrc -b ${subj}.PosDec_PS_PosLook_PS.bl${fwhm}+tlrc -expr "a-b" -prefix ${subj}.${cond}.bl${fwhm}
+          set PreDurxPos_DecLooklist = "$PreDurxPos_DecLooklist ${subj}.${cond}.bl${fwhm}+tlrc"
+        end
+
+
+ #############################     
+ ## -set 2 is going to be displayed as positive activation -set1 is going to be displayed as negative activation.               	
+
+	3dttest -paired -prefix ttest.${group}.MVP_MVS.bl${fwhm} -set1 $MVSlist -set2 $MVPlist
+	3dttest -paired -prefix ttest.${group}.IVP_IVS.bl${fwhm} -set1 $IVSlist -set2 $IVPlist
+	3dttest -paired -prefix ttest.${group}.MVP_IVP.bl${fwhm} -set1 $IVPlist -set2 $MVPlist    
+	3dttest -paired -prefix ttest.${group}.MVS_IVS.bl${fwhm} -set1 $IVSlist -set2 $MVSlist
+	3dttest -paired -prefix ttest.${group}.MW_NW.bl${fwhm} -set1 $NWlist  -set2 $MWlist
+	3dttest -paired -prefix ttest.${group}.IW_NW.bl${fwhm} -set1 $NWlist -set2 $IWlist    
+	3dttest -paired -prefix ttest.${group}.MW_IW.bl${fwhm} -set1 $IWlist -set2 $MWlist	
+	3dttest -paired -prefix ttest.${group}.Pictures_Scrambled.bl${fwhm} -set1 $Scrambled_alllist -set2 $Pictures_alllist 	
+	3dttest -paired -prefix ttest.${group}.Manner_Nonsense.bl${fwhm} -set1 $Manner_Nonlist -set2 $Mannerlist
+	3dttest -paired -prefix ttest.${group}.Instrument_Nonsense.bl${fwhm}  -set1 $Instrument_Nonlist -set2 $Instrumentlist		
+	3dttest -paired -prefix ttest.${group}.VerbxPic.bl${fwhm} -set1 $IVP_IVSlist -set2 $MVP_MVSlist		
+	3dttest -prefix ttest.${group}.IVP.bl${fwhm} -base1 0 -set2 $IVPlist	
+	3dttest -prefix ttest.${group}.IVS.bl${fwhm} -base1 0 -set2 $IVSlist 	
+	3dttest -prefix ttest.${group}.IW.bl${fwhm} -base1 0 -set2 $IWlist			        	
+	3dttest -prefix ttest.${group}.MVP.bl${fwhm} -base1 0 -set2 $MVPlist
+	3dttest -prefix ttest.${group}.MVS.bl${fwhm} -base1 0 -set2 $MVSlist
+	3dttest -prefix ttest.${group}.MW.bl${fwhm} -base1 0 -set2 $MWlist
+	3dttest -prefix ttest.${group}.NW.bl${fwhm} -base1 0 -set2 $NWlist	
+
+################################	
+
+	# convefam to z scores
+
+	set cond = "MVP_MVS IVP_IVS MVP_IVP MVS_IVS MW_NW IW_NW MW_IW Pictures_Scrambled Manner_Nonsense Instrument_Nonsense VerbxPic IVP IVS IW MVP MVS MW NW"
+
+
+	foreach c ($cond)
+		3dmerge -doall -1zscore -prefix ttest.${group}.$c.bl${fwhm}.z ttest.${group}.$c.bl${fwhm}+tlrc
+	end
+
+
+mkdir ${group}
+mv ttest.*.z+tlrc* ${group}
+rm -f ttest.*.bl${fwhm}+tlrc*
+
+endif
+
+
