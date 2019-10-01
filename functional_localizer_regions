@@ -1,0 +1,14 @@
+#!/bin/tcsh -f
+
+# 3dmerge -dxyz=1 -1clust_order 1 1 -prefix order_of_clusters ttest.basis.WAVE_REML.verbxpic.allmask+tlrc
+# before you are able to run this script and create the different masks you will have to order the clusters with
+# 3dmerge by using the line above then you can use the file it outputs as input to 3dcalc and use the numbering of
+# the clusters to create the different clusters.
+# input = order_of_clusters+tlrc, output = mask_verbxpic_1,mask_verbxpic_2 ... mask_verbxpic_9 
+
+foreach i (`count -dig 1 1 9 1`)
+	echo $i
+           3dcalc -a order_of_clusters+tlrc -expr "equals(a, $i)" -prefix mask_verbxpic_$i		
+	end
+		
+ 
