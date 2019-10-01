@@ -1,4 +1,7 @@
 #!/bin/tcsh -f
+# ----------------------------------- 
+#     Wessel Olaf van Dam 10/01/2019
+#------------------------------------
 
 # Create ACF_values.1D file that contains ACF values for each subject 
 # from errts-file using subject-specific full_mask as Mask file. 
@@ -11,6 +14,3 @@ echo "This is Subject nr." ${s}  >> Values.1D
 3dFWHMx -mask full_mask.tshift_outliers_removed_5mm_smoothed${s}+tlrc -detrend -ACF -input errts.tshift_outliers_removed_5mm_smoothed${s}_REML+tlrc >> ACF_values.1D
 
 end
-
-
-
