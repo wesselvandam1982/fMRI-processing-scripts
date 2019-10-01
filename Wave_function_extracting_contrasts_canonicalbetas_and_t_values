@@ -1,0 +1,72 @@
+#!/bin/tcsh -f
+
+# Script to extract both the canonical beta and t-statistic for each subject
+# and creates a separate output file for each of them.
+
+#########################################
+
+set fwhm = 6
+set study = "pn"
+
+set conditions = " NegDec_PS@7@8 NegDec_DS@10@11 NegLook_PS@13@14 NegLook_DS@16@17" #condition Names and subbricks for beta and t1
+set subjects = "1 2 3 4 5 6 7 8 9 10" #subjects
+set s = "tshift_outliers_removed_5mm_smoothed" #folder name that contains stats file
+set mergedir = "/Users/batman/Documents/Emotionregulation_LDLPFC_STIM/Model_Wave_function_tshift_noRatingregr/3dMEMA_files" #output directory
+set homedir = "/Users/batman/Documents/Emotionregulation_LDLPFC_STIM" #home directory
+
+#########################################
+
+if ( $1 == "ex") then
+
+  echo "Part 1 ================================="
+
+
+  foreach subject ( $subjects )
+
+	cd ${homedir}/${subject}/${s}${subject}.results
+
+    set bucketname = "stats.tshift_outliers_removed_5mm_smoothed${subject}_REML"
+
+	foreach item ( ${conditions} )
+ 
+	  set cond = `echo $item | cut -f1 -d"@"`
+	  set b1loc = `echo $item | cut -f2 -d"@"` # beta1 = canonical beta
+	  set t1loc = `echo $item | cut -f3 -d"@"` # t1 = t-statistic
+     
+      echo t1loc
+
+	  3dbuc2fim -prefix b1 "${bucketname}+tlrc[${b1loc}]"
+	  
+	  3dbuc2fim -prefix t1 "${bucketname}+tlrc[${t1loc}]"
+	  
+
+#	  if (-e ${cond}+tlrc.HEAD) rm -f ${cond}+tlrc.*
+# 	  if (-e ${cond}1+tlrc.HEAD) rm -f ${cond}1+tlrc.*
+
+  	 # only b1, no calhoun correction
+	 3dcopy b1+tlrc ${cond}+tlrc
+	 3drename ${cond}+tlrc ${cond}.bl${fwhm}_B
+	 3dcopy t1+tlrc ${cond}_T+tlrc
+	 3drename ${cond}_T+tlrc ${cond}.bl${fwhm}_T
+
+      mv ${cond}.bl${fwhm}_B+tlrc.HEAD ${mergedir}/${subject}.${cond}.bl${fwhm}_B+tlrc.HEAD
+	  mv ${cond}.bl${fwhm}_B+tlrc.BRIK ${mergedir}/${subject}.${cond}.bl${fwhm}_B+tlrc.BRIK 
+      mv ${cond}.bl${fwhm}_T+tlrc.HEAD ${mergedir}/${subject}.${cond}.bl${fwhm}_T+tlrc.HEAD
+	  mv ${cond}.bl${fwhm}_T+tlrc.BRIK ${mergedir}/${subject}.${cond}.bl${fwhm}_T+tlrc.BRIK 	  
+	  
+	  #check whether your BRIK files are being zipped or not!
+	  #mv ${cond}.t.bl${fwhm}+tlrc.HEAD ${mergedir}/${subject}.${cond}.t.bl${fwhm}+tlrc.HEAD
+	  #mv ${cond}.t.bl${fwhm}+tlrc.BRIK.bz2 ${mergedir}/${subject}.${cond}.t.bl${fwhm}+tlrc.BRIK.bz2
+
+      rm -f ${cond}*+*.*  # delete +orig +tlrc files to save space
+	  rm -f b?+tlrc* b??+tlrc*
+
+	end
+
+	cd ../../../..
+
+  end  # subject
+
+endif
+
+
