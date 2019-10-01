@@ -1,0 +1,103 @@
+#!/bin/tcsh -f
+
+# This program applies given voxelwise and cluster size thresholds
+# to given +tlrc functional group maps.
+
+set prog_name = $0:t
+
+if ("$1" == "-h" || "$1" == "-help" || $#argv != 0 ) then
+echo ""
+echo "Usage: $prog_name <maskfile>"
+echo "Example: % ${prog_name}"
+echo ""
+echo "${prog_name}: This program ..."
+echo ""
+echo ""
+echo ""
+echo ""
+echo ""
+echo ""
+echo ""
+
+echo ""
+exit 1
+endif
+
+# the list of t-values and corresponding cluster size thresholds. 
+# Example: 2.75@456@0.05 means that threshold at t=2.75 (corresponding to
+# some voxelwise p), and cluster size threshold
+# at 456 microliters, giving corrected mapwise p (alpha) of 0.05.
+
+# zscores: 1.96 = p 0.05, 2.170 = p 0.03, 2.326 = p 0.02, 2.575 = p 0.01, 2.807 = p 0.005, 3.280 = p 0.001
+# senid
+set ZClist = "2.326@801@05@/Volumes/desairh_lab/EXPERIMENTS/Sentframes/fMRI/Model_SPMG2_function/resampled_20+tlrc.BRIK.bz2"
+
+set cond_prefix = "ttest.basis.SPMG2_calhoun_REML."
+set cond_postfix = ".bl6"
+set radius = 3.1
+
+# the list of conditions which are to be thresholded
+set conditions = "LAxTI LNxTI ANxTI LT_LI AT_AI NT_NI FSxTI Abst_Lit Abst_Nonword Lit_Nonword" #condition names
+
+
+#set maskname = `echo $1 | cut -f1 -d"+"`
+
+foreach c ( $conditions )
+ echo
+ echo "Thresholding condition ${c}..."
+
+  set cond = ${cond_prefix}${c}${cond_postfix}
+
+  # convert t-scores to z scores first
+  #3dmerge -1zscore -doall -prefix ${cond}.z ${cond}+tlrc\ # convert to zscore, if you haven't done this yet
+
+  foreach i ( $ZClist )
+
+  set z_thresh = `echo $i | cut -f1 -d"@"`# z value threshold
+  set c_thresh = `echo $i | cut -f2 -d"@"`# cluster size threshold
+  set p_corr = `echo $i | cut -f3 -d"@"`# voxelwise p value
+  set maskname = `echo $i | cut -f4 -d "@"`# the mask
+
+  # multiply function with the mask first
+  if (-e /tmp/$$.${cond}+tlrc.HEAD ) rm -f /tmp/$$.${cond}*
+  3dcalc -fscale -a ${cond}.z+tlrc -b ${maskname}+tlrc -expr "a*step(b)" -prefix /tmp/$$.${cond}
+
+  # apply voxelwise and cluster threshold - separtely for +ve and -ve activation
+
+  if (-e ${cond}.c${c_thresh}.p${p_corr}.posz+tlrc.HEAD) rm -f ${cond}.c${c_thresh}.p${p_corr}.posz+tlrc*
+  if (-e ${cond}.c${c_thresh}.p${p_corr}.negz+tlrc.HEAD) rm -f ${cond}.c${c_thresh}.p${p_corr}.negz+tlrc*
+  if (-e ${cond}.c${c_thresh}.p${p_corr}.z+tlrc.HEAD) rm -f ${cond}.c${c_thresh}.p${p_corr}.z+tlrc*
+
+  # +ve and -ve combined - a single cluster could contain both +ve and -ve voxels
+  #3dmerge -1thtoin -1clip ${z_thresh} -1clust ${radius} ${c_thresh} -prefix ${cond}.c${c_thresh}.p${p_corr}.z "/tmp/$$.${cond}+tlrc" > /dev/null
+
+  # make +ve clustered map
+  3dmerge -1thtoin -1noneg -1clip ${z_thresh} -1clust ${radius} ${c_thresh} -prefix ${cond}.c${c_thresh}.p${p_corr}.posz "/tmp/$$.${cond}+tlrc" > /dev/null
+  #3dcalc -a $1 -b ${cond}.c${c_thresh}.p${p_corr}.posz+tlrc -expr "a*b" -prefix ${cond}.posz.maskmult
+
+  # make -ve clustered mp
+  3dmerge -1thtoin -2clip -${z_thresh} 1000 -1clust ${radius} ${c_thresh} -prefix ${cond}.c${c_thresh}.p${p_corr}.negz "/tmp/$$.${cond}+tlrc" > /dev/null
+  #3dcalc -a $1 -b ${cond}.c${c_thresh}.p${p_corr}.negz+tlrc -expr "a*b" -prefix ${cond}.negz.maskmult
+
+  # combine both -ve and +ve maps into a single map 
+  3dcalc -a ${cond}.c${c_thresh}.p${p_corr}.posz+tlrc -b ${cond}.c${c_thresh}.p${p_corr}.negz+tlrc -expr "a+b" -prefix ${cond}.c${c_thresh}.p${p_corr}.z
+
+  # also create a "bigvoxel" map using the combined map
+  # this can be used for mapping function to surface
+  # it gets rid of the tiny dots that typically result from
+  # smoothing before 3dDecon rather than after
+  # 3dresample -dxyz 3.75 3.75 4.0 -rmode NN -inset ${cond}.c${c_thresh}.p${p_corr}.z+tlrc -prefix ${cond}.c${c_thresh}.p${p_corr}.z.bigvox
+
+ end
+
+ rm -f /tmp/$$.*
+ rm -f *.posz*
+ rm -f *.negz*
+
+end
+
+echo
+echo "${prog_name}: Done."
+echo
+
+
